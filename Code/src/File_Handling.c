@@ -123,7 +123,16 @@ cJSON* read_json_file(const char *filename) {
 
 
 
-void Extract(const char *Path, char *Field){
+void Extract(const char *Path){
+
+
+	char Field[156];
+	const char *MDfilename = strrchr(Path, '/'); // Find the last occurrence of '/'
+	MDfilename++; // Move to the next character after '/'
+	strncpy(Field, MDfilename, sizeof(Field)); // Copy the filename
+	char *dot = strrchr(Field, '.'); // Find the last occurrence of '.'
+	*dot = '\0'; // If '.' found, truncate the string
+
 
 	char json_file_name[256];
 	cJSON *root = NULL; 
@@ -141,67 +150,91 @@ void Extract(const char *Path, char *Field){
 		fclose(JSON_file);
 		root = read_json_file(json_path);
 	}else{
-		root = cJSON_CreateArray();
+		root = cJSON_CreateObject();
 	}
 
 	
 	FILE *file = fopen(Path, "r");
    char line[1024];
 	cJSON *file_entry = cJSON_CreateObject();
-	cJSON_AddItemToObject(root,json_file_name,file_entry);
-	cJSON *Last = file_entry;
+	cJSON_AddItemToObject(root,Field,file_entry);
+	cJSON *Last;
 	cJSON *Type; 
 	cJSON *Element;
 	cJSON *Concept;
-	cJSON *Fact;
+	cJSON *Awnser = NULL;
+//	cJSON *Fact;
+
+	int truth_table[3] = {0,0,0};
+
+	int Init = 0;
 
 	while (fgets(line, sizeof(line), file)) {
 		if (line == NULL) {break;}
 
 		size_t len = strlen(line);
 		int code_block_started = 0;
-
+		
 		if (strncmp(line, "#",1) == 0) {
-			Type = cJSON_CreateObject();
-			cJSON_AddItemToObject(file_entry,strdup(line + 1),Type);
-			Last = Type;
-
-		} else if (strncmp(line, "##", 2) == 0) {
-			Element = cJSON_CreateObject();
-			cJSON_AddItemToObject(Last,strdup(line + 2),Element);
-			Last = Element;
-
-		} else if (strncmp(line, "###", 3) == 0) {
-			Concept = cJSON_CreateObject();
-			cJSON_AddItemToObject(Last,strdup(line + 3),Concept);
-			Last = Concept;
-
-		} else if (strncmp(line, "####", 4) == 0) {
-			Fact = cJSON_CreateObject();
-			cJSON_AddItemToObject(Last,strdup(line + 4),Fact);
-			Last = Fact;
-
-		} else if (strncmp(line, "- ", 2) == 0) {
-			cJSON_AddStringToObject(Last,"Awnser", strdup(line + 2));
-
-		} else if (strlen(line) >= 5 && isdigit(line[0]) && line[strlen(line) - 1] == '.' && line[strlen(line) - 2] == ' ') {
-			cJSON_AddStringToObject(Last,"Awnser", strdup(line + 2));
-			cJSON_AddStringToObject(Last,"Awnser_type","Numbered_List");
-
-		} else if (strncmp(line, "```", 3) == 0) {
-			if (!code_block_started) {
-				code_block_started = 1;
-			} else {
-				code_block_started = 0;
-			}
-		} else if (code_block_started) {
-			cJSON_AddStringToObject(Last,"Awnser", line);
-		} else {
 			line[len - 1] = '\0'; // Replace newline with null terminator
-			cJSON_AddStringToObject(Last,"Awnser", line);
+			if (Init){
+				cJSON_AddStringToObject(Last,"Familiarity","0");
+				cJSON_AddStringToObject(Last,"Known","0");
+				cJSON_AddStringToObject(Last,"Question","");
+				cJSON_AddItemToObject(Last,"Answer",Awnser);
+				Init = 0;
+			}		
+			if (strncmp(line, "# ",2) == 0) {
+				Type = cJSON_CreateObject();
+				cJSON_AddItemToObject(file_entry,strdup(line + 2),Type);
+				truth_table[0] = 1;
+				Last = Type;
+			} else if (strncmp(line, "## ", 3) == 0) {
+				Element = cJSON_CreateObject();
+				if (truth_table[0]) Last = Type;
+				if (!truth_table[0]) Last = file_entry;
+				cJSON_AddItemToObject(Last,strdup(line + 3),Element);
+				truth_table[1] = 1;
+				Last = Element;
+			} else if (strncmp(line, "### ", 4) == 0) {
+				Concept = cJSON_CreateObject();
+				if (truth_table[0] && truth_table[1]) Last = Element;
+				if (!truth_table[0] && !truth_table[1]) Last = file_entry;
+				if (truth_table[0] && !truth_table[1]) Last = Type;
+				cJSON_AddItemToObject(Last,strdup(line + 4),Concept);
+				truth_table[2] = 1;
+				Last = Concept;
+	/*		} else if (strncmp(line, "#### ", 5) == 0) 
+				Fact = cJSON_CreateObject();
+				cJSON_AddItemToObject(Last,strdup(line + 5),Fact);
+				Last = Fact; */
+			}
+		} else {
+
+
+			if (!Init){
+				Awnser = cJSON_CreateObject();
+				Init = 1;
+			}
+			if (strncmp(line, "- ", 2) == 0) {
+				cJSON_AddStringToObject(Awnser,"Line_List", strdup(line + 2));
+			} else if (strlen(line) >= 4 && isdigit(line[0]) && line[1] == '.' && line[2] == ' ') {
+				cJSON_AddStringToObject(Awnser,"Numbered_List", strdup(line + 2));
+			} else if (strncmp(line, "```", 3) == 0) {
+				if (!code_block_started) {
+					code_block_started = 1;
+				} else {
+					code_block_started = 0;
+				}
+			} else if (code_block_started) {
+				cJSON_AddStringToObject(Awnser,"Code_Block", line);
+			} else {
+				line[len - 1] = '\0'; // Replace newline with null terminator
+				cJSON_AddStringToObject(Awnser,"Text", line);
+			}
 		}
 	}
-
+	
    char *json_string = cJSON_Print(root);
 	printf("%s",json_string);
 	free(json_string);
@@ -217,9 +250,9 @@ void Extract(const char *Path, char *Field){
 
 
 void Build(const char *Path){
-	static int Init = 0;
-	static char* Vault_history = NULL;
-	static char* Field = NULL;
+	int Init = 0;
+	char* Vault_history = NULL;
+	char Recursive_PATH[PATH_MAX];
 	if (!Init){
 		Vault_history = Get_Vault_History(Path);
 		Init = 1;
@@ -229,16 +262,12 @@ void Build(const char *Path){
 	while ((Next_Folder = readdir(dir)) != NULL){
 	
 		if (Next_Folder->d_name[0] == '.') {continue;}
-		char Recursive_PATH[PATH_MAX];
 		snprintf(Recursive_PATH, sizeof(Recursive_PATH), "%s/%s", Path, Next_Folder->d_name);
-
 		if (Next_Folder -> d_type == DT_REG){
 			if (compare_dates(Vault_history,last_access_date(Recursive_PATH)) < 1)
-//				printf("%s\n",Recursive_PATH);
-				Extract(Recursive_PATH,Field);
+				Extract(Recursive_PATH);
 		}
 		if (Next_Folder->d_type == DT_DIR){
-			Field = Next_Folder -> d_name;
 			Build(Recursive_PATH);
 		}
 	}

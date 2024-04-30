@@ -6,7 +6,8 @@
 
 
 int main(){
-	Build("/media/michael/NEW VOLUME/Notes");
+//	Build("/media/michael/NEW VOLUME/Notes");
+	Build("/home/michael/Desktop/test");
 	return 0;
 }
 
