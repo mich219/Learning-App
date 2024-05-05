@@ -26,8 +26,14 @@ int main(){
 		// Function Call
 		Selected_Field_Path = Find_Field_Path(PATH,Selected_Field);
 	}
+	
+	system("clear");
+	printf("Press Enter to view the answer.\n");
+	printf("Press _ to clear the screen.\n");
+	printf("\n");
+	getchar();
 	read_json_file(Selected_Field_Path);
-	Learn(read_json_file(Selected_Field_Path),NULL);
+	Learn(read_json_file(Selected_Field_Path));
 
 	return 0;
 }

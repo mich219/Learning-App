@@ -1,7 +1,9 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <dirent.h>
 #include <limits.h>
 #include <string.h>
+#include <stdbool.h>
 #include "../include/File_Handling.h"
 #include "../include/File_Processing.h"
 #include "../include/Learning_Interface.h"
@@ -64,97 +66,80 @@ char* Find_Field_Path(const char *Path, const char *Selected_Field){
 }
 
 
-void Learn(cJSON *item, const char* parent){
+void Learn(cJSON *item) {
 
- if (!item || !cJSON_IsObject(item)) {
-        return;
-    }
-
-    cJSON* current;
-    cJSON_ArrayForEach(current, item) {
-        char currentName[100]; // Assuming item names are less than 100 characters
-
-        if (parent != NULL) {
-            sprintf(currentName, "%s -> %s", parent, current->string);
-        } else {
-            sprintf(currentName, "%s", current->string);
+void readInputUntilEnter() {
+    printf("\n:");
+    int ch;
+    while ((ch = getchar()) != '\n' && ch != EOF) {
+        if (ch == '_') {
+            system("clear"); // Clear the console screen
+            printf("\n:");
         }
-
-        printf("Title: %s\n", currentName);
-
-        cJSON* familiarity = cJSON_GetObjectItemCaseSensitive(current, "Familiarity");
-        cJSON* known = cJSON_GetObjectItemCaseSensitive(current, "Known");
-        cJSON* answer = cJSON_GetObjectItemCaseSensitive(current, "Answer");
-
-        if (familiarity) {
-            printf("Familiarity: %s\n", familiarity->valuestring);
-        }
-        if (known) {
-            printf("Known: %s\n", known->valuestring);
-        }
-        if (answer) {
-            printf("Answer:\n");
-            cJSON* lineList = cJSON_GetObjectItemCaseSensitive(answer, "Line_List");
-            cJSON* text = cJSON_GetObjectItemCaseSensitive(answer, "Text");
-
-            if (lineList) {
-                printf("Line List: %s\n", lineList->valuestring);
-            }
-            if (text) {
-                printf("Text: %s\n", text->valuestring);
-            }
-
-            // Ask for user input to modify Familiarity and Known entries
-            printf("Enter Familiarity (0-100): ");
-            scanf("%s", familiarity->valuestring);
-            printf("Enter Known (True/False): ");
-            scanf("%s", known->valuestring);
-        }
-
-        printf("\n");
-
-        // Recursively traverse child items
-        Learn(current->child, currentName);
     }
 }
 
+    // Define a constant for the maximum number of keys
+    #define MAX_KEYS 100
 
+    // Array to store printed keys
+    static char printedKeys[MAX_KEYS][100] = {0};
+    static int numPrintedKeys = 0;
 
+    // Function to check if a key has been printed
+    bool keyAlreadyPrinted(const char* key) {
+        for (int i = 0; i < numPrintedKeys; i++) {
+            if (strcmp(printedKeys[i], key) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 
+    // Function to add a key to the printed keys array
+    void addPrintedKey(const char* key) {
+        if (numPrintedKeys < MAX_KEYS) {
+            strcpy(printedKeys[numPrintedKeys], key);
+            numPrintedKeys++;
+        }
+    }
 
+    cJSON* current = item->child;
 
+    // Traverse through each child item
+    while (current != NULL) {
+        // Check if the current key has already been printed
+        if (!keyAlreadyPrinted(current->string)) {
+            // Print the current item string
+            printf("%s ", current->string);
+            addPrintedKey(current->string);
+        }
 
+        // Check if the current item has children
+        if (current->child && cJSON_IsObject(current->child)) {
+            // Recursively call Learn() for children
+            Learn(current);
+        } else {
+            // If it's a leaf node, print its value
+            cJSON* answer = cJSON_GetObjectItemCaseSensitive(current, "Answer");
+            if (answer && cJSON_IsArray(answer)) {
+                printf("\n");
+        readInputUntilEnter();
 
+                printf("Answer:\n");
+                int i;
+                for (i = 0; i < cJSON_GetArraySize(answer); i++) {
+                    cJSON* answerItem = cJSON_GetArrayItem(answer, i);
+                    printf("%s", cJSON_GetStringValue(answerItem));
+                }
+                printf("\n"); // Add a newline after printing the answer
+            }
+        }
 
-
-
-
-/*
-	if (item && cJSON_IsObject(item)) {
-		cJSON *answer = cJSON_GetObjectItemCaseSensitive(item, "answer");
-		if (answer && cJSON_IsString(answer)) {
-			printf("Answer: %s\n", answer->valuestring);
-		}
-	}
-
-	// Recursively search children of current item
-	if (item && cJSON_IsArray(item)) {
-		cJSON *child = item->child;
-		while (child) {
-			Learn(child);
-			child = child->next;
-		}
-	}
-*/
-
-
-
-
-
-
-
-
-
+        // Move to the next sibling item
+        current = current->next;
+    }
+}
 
 
 

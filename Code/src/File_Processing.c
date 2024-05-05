@@ -38,8 +38,6 @@ cJSON *Extract(const char *Path){
 		if (strncmp(line, "#",1) == 0) {
 			line[len - 1] = '\0'; // Replace newline with null terminator
 			if (Init){
-				cJSON_AddStringToObject(Last,"Familiarity","0");
-				cJSON_AddStringToObject(Last,"Known","0");
 				cJSON_AddItemToObject(Last,"Answer",Awnser);
 				Init = 0;
 			}	
@@ -75,17 +73,11 @@ cJSON *Extract(const char *Path){
 		} else {
 
 			if (!Init){
-				Awnser = cJSON_CreateObject();
+				Awnser = cJSON_CreateArray();
 				Init = 1;	
 			}	
-			if (strncmp(line, "- ", 2) == 0) {
-				cJSON_AddStringToObject(Awnser,"Line_List", line);
-			} else if (strlen(line) >= 4 && isdigit(line[0]) && line[1] == '.' && line[2] == ' ') {
-				cJSON_AddStringToObject(Awnser,"Numbered_List", line);
-			} else {
-				line[len - 1] = '\0'; // Replace newline with null terminator
-				cJSON_AddStringToObject(Awnser,"Text", line);
-			}
+			cJSON_AddItemToArray(Awnser,cJSON_CreateString(line));
+			
 
 		}
 
