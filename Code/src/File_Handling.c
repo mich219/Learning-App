@@ -20,7 +20,6 @@ void Update_Vault_History(const char *Path){
 }
 
 char* Get_Vault_History(const char *Path){
-	static int Initialised = 0;
 	static char *Last_Time_checked = NULL; // Allocate memory for Last_Time_checked
 
 	const char *last_separator = strrchr(Path, '/');

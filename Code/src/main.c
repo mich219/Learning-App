@@ -1,38 +1,33 @@
+#include <stdlib.h>
 #include <stdio.h>
-#include <dirent.h>
-#include <limits.h>
-#include "../include/File_Handling.h"
+#include "../include/Learning_Interface.h"
 #include "../include/File_Processing.h"
 #include "../include/cJSON.h"
 
+#define PATH "/home/michael/Desktop/bitch/Computer_Science"
 
-//"/media/michael/NEW VOLUME/Notes"
-#define Path "/home/michael/Desktop/test"
 
 int main(){
-	int Init = 0;
-	char* Vault_history = NULL;
-	char Recursive_PATH[PATH_MAX];
-	if (!Init){
-		Vault_history = Get_Vault_History(Path);
-		Init = 1;
+	char Selected_Field[30];
+	char *Selected_Field_Path = NULL;
+	// styling
+	system("clear");
+	printf("%s\n","Choose a Field That you would like to revise:");
+	printf("%s\n","");
+
+	// Function Call
+	Build(PATH);
+
+	// styling
+	while (Selected_Field_Path == NULL){
+		printf("%s","Enter Field name:");
+		scanf("%29s",Selected_Field);
+		printf("%s\n","");
+		// Function Call
+		Selected_Field_Path = Find_Field_Path(PATH,Selected_Field);
 	}
-	DIR *dir = opendir(Path);
-	struct dirent *Next_Folder;
-	while ((Next_Folder = readdir(dir)) != NULL){
-	
-		if (Next_Folder->d_name[0] == '.') {continue;}
-		snprintf(Recursive_PATH, sizeof(Recursive_PATH), "%s/%s", Path, Next_Folder->d_name);
-		if (Next_Folder -> d_type == DT_REG){
-			if (compare_dates(Vault_history,last_access_date(Recursive_PATH)) < 1)
-				Extract(Recursive_PATH);
-		}
-		if (Next_Folder->d_type == DT_DIR){
-			main(Recursive_PATH);
-		}
-	}
-	closedir(dir);
+	read_json_file(Selected_Field_Path);
+	Learn(read_json_file(Selected_Field_Path));
 
 	return 0;
 }
-
