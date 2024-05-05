@@ -27,7 +27,7 @@ int main(){
 		Selected_Field_Path = Find_Field_Path(PATH,Selected_Field);
 	}
 	read_json_file(Selected_Field_Path);
-	Learn(read_json_file(Selected_Field_Path));
+	Learn(read_json_file(Selected_Field_Path),NULL);
 
 	return 0;
 }
