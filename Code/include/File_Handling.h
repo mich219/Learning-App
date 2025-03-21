@@ -4,5 +4,3 @@ void Update_Vault_History(const char *Path);
 char* Get_Vault_History(const char *Path);
 char* last_access_date(const char *Path);
 
-
-
