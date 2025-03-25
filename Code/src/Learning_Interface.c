@@ -288,15 +288,15 @@ static void displayAnswer(cJSON* answer) {
     if (!answer || !cJSON_IsArray(answer)) {
         return;
     }
-    
-    // Wait for user to press Enter to see the answer
-    readInputUntilEnter();
-    
+     
     // Print the hierarchical path as context for the answer
     if (fullPath[0] != '\0') {
         printf("\033[1m%s:\033[0m\n", fullPath); // Bold formatting for path
     }
     
+    // Wait for user to press Enter to see the answer
+    readInputUntilEnter();
+   
     // Print each answer item (usually lines of text)
     for (int i = 0; i < cJSON_GetArraySize(answer); i++) {
         cJSON* answerItem = cJSON_GetArrayItem(answer, i);

@@ -3,7 +3,7 @@
 ### You must first open the terminal in the Learning_App/Code directory.
 
 ### To compile the Learning App:
-gcc -o Learn Learning_App/Code/src/*.c -I Learning_App/Code/include
+gcc -o Learn src/*.c -I include
 
 ### To run the Learning App: (with Notes being the directory to your markdown notes)
 ./Learn ~/Notes
